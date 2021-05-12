@@ -441,6 +441,10 @@ ui <- tags$head(
                                    plotOutput("plot_east", width = "80%"))), #navbarMenu end
                tabPanel("Historical Elo",icon = icon("hockey-puck"),
                         h1("Complete History of the NHL"),
+                        "Every NHL franchise's relative strength after every game dating back to the league's inception. An Elo rating of ~1500 is considered average. An expansion team's initial Elo is set to be 1380, and a team's final Elo from the end of one season is reverted toward a mean of 1505 by 30 percent at the start of the following season.",
+                        "Elo ratings measure a team's strength over time, accounting for the strength of opponents, locations of games and margin of victory.",
+                        br(),
+                        br(),
                         selectizeInput("teamInput", "Team",
                                        choices = unique(elo_historical$Team.A),  
                                        selected="Tampa Bay Lightning", multiple =FALSE),
@@ -459,7 +463,7 @@ ui <- tags$head(
                fluidRow(
                    column(9,
                           p("App created by ", tags$a(href = "https://steodose.github.io/steodosescu.github.io/", 'Stephan Teodosescu', target = '_blank'), ", April 2021", HTML("&bull;"),
-                            "Find the code on Github:", tags$a(href = "https://github.com/steodose/BlogPosts", tags$i(class = 'fa fa-github', style = 'color:#5000a5'), target = '_blank'), style = "font-size: 100%"),
+                            "Find the code on Github:", tags$a(href = "https://github.com/steodose/NHL-Odds", tags$i(class = 'fa fa-github', style = 'color:#5000a5'), target = '_blank'), style = "font-size: 100%"),
                           p("Questions? Comments? Reach out on Twitter", tags$a(href = "https://twitter.com/steodosescu", tags$i(class = 'fa fa-twitter', style = 'color:#1DA1F2'), target = '_blank'), style = "font-size: 100%"),
                           p(tags$em("Last updated: April 2021"), style = 'font-size:85%'))),
                windowTitle = "2020-21 NHL Odds"
