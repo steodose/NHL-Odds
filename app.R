@@ -445,10 +445,10 @@ ui <- tags$head(
                         "Elo ratings measure a team's strength over time, accounting for the strength of opponents, locations of games and margin of victory.",
                         br(),
                         br(),
-                        selectizeInput("teamInput", "Team",
-                                       choices = unique(elo_historical$Team.A),  
-                                       selected="Tampa Bay Lightning", multiple =FALSE),
-                        plotOutput("elo_plot", width = "80%")
+                        sidebarPanel(selectizeInput("teamInput", "Team",
+                                                    choices = unique(elo_historical$Team.A),  
+                                                    selected="Tampa Bay Lightning", multiple =FALSE), width = 3),
+                        mainPanel(plotOutput("elo_plot"), width = 9),
                ),
                tabPanel("About", icon = icon("info-circle"),
                         fluidRow(
