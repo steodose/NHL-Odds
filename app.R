@@ -55,7 +55,7 @@ gt_theme_538 <- function(data,...) {
         # Add team logos w/ web_image
         text_transform(
             locations = cells_body(
-                vars(logo)
+                columns = logo
             ),
             fn = function(x) {
                 web_image(
@@ -133,7 +133,7 @@ playoff_odds_canada <- ggplot(odds_canada, aes(x=datestamp, y = `Playoffs%`, col
 
 # Canadian teams playoff odds table
 playoff_odds_table_canada <- odds_current %>%
-    select(logo, `Team Name`, Division, `Elo Rating`, `Win Div.%`, `Playoffs%`, `Make 2nd Rd`, `Make 3rd Rd`, `Make Finals`, `Win Finals`) %>%
+    select(`logo`, `Team Name`, Division, `Elo Rating`, `Win Div.%`, `Playoffs%`, `Make 2nd Rd`, `Make 3rd Rd`, `Make Finals`, `Win Finals`) %>%
     arrange(desc(`Playoffs%`)) %>%
     filter(Division == "North") %>%
     gt() %>%
@@ -366,10 +366,10 @@ historical_manual_colors <- c("Toronto Maple Leafs" = "#00205B",
                               "Nashville Predators" = "#FFB81C",
                               "Chicago Blackhawks" = "#CF0A2C",
                               "Columbus Blue Jackets" = "#002654",
-                              "Detriot Red Wings" = "#CE1126",
+                              "Detroit Red Wings" = "#CE1126",
                               "Boston Bruins" = "#000000",
                               "New York Islanders" = "#F47D30",
-                              "Pittsburg Penguins" = "#CFC493",
+                              "Pittsburgh Penguins" = "#CFC493",
                               "Washington Capitals" = "#C8102E",
                               "New York Rangers" = "#0038A8",
                               "Philadelphia Flyers" = "#F74902",
@@ -445,10 +445,14 @@ ui <- tags$head(
                         "Elo ratings measure a team's strength over time, accounting for the strength of opponents, locations of games and margin of victory.",
                         br(),
                         br(),
-                        sidebarPanel(selectizeInput("teamInput", "Team",
+                        sidebarPanel(
+                            selectizeInput("teamInput", "Team",
                                                     choices = unique(elo_historical$Team.A),  
-                                                    selected="Tampa Bay Lightning", multiple =FALSE), width = 3),
-                        mainPanel(plotOutput("elo_plot"), width = 9),
+                                                    selected="Tampa Bay Lightning", multiple =FALSE),
+                            sliderInput("yearInput", "Year", min=1918, max=2021, 
+                                        value=c(1950, 2021), sep=""), width = 4),
+
+                        mainPanel(plotOutput("elo_plot"), width = 8),
                ),
                tabPanel("About", icon = icon("info-circle"),
                         fluidRow(
@@ -574,10 +578,12 @@ server <- function(input, output) {
         plot(historical_elo_plot)
     })
     
-    #Reactive Elo historical plot
+    #Reactive Elo historical plot (Complete history of the NHL)
     d <- reactive({
         elo_historical %>%
-            filter(Team.A == input$teamInput
+            filter(Team.A == input$teamInput,
+                   Year >= input$yearInput[1],
+                   Year <= input$yearInput[2]
             )
     })
     
@@ -587,10 +593,11 @@ server <- function(input, output) {
             geom_line(size = 1.2) +
             labs(x = "", y = "ELO Rating",
                  title = "Historical NHL Elo Ratings",
-                 subtitle = glue("Elo ratings measure a team's strength over time, accounting for the strength of opponents, locations of games and margin of victory. Data as of games prior to {update_date} of current season."),
+                 subtitle = glue("Data as of games prior to **{update_date}** of 2020-21 season."),
                  caption = "Data: Neil Paine (Fivethirtyeight.com)\nGraphic: @steodosescu") +
             scale_color_manual(values = historical_manual_colors) +
             theme(plot.title = element_text(face="bold")) +
+            theme(plot.subtitle = element_markdown()) +
             theme(legend.position="none") +
             geom_hline(yintercept = 1500, color = "red", linetype = "dashed", alpha=0.5)
     })
