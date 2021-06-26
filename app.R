@@ -17,6 +17,7 @@ library(glue)
 library(reactable)
 library(reactablefmtr)
 library(htmltools)
+library(plotly)
 
 ##### Load datasets #####
 
@@ -36,7 +37,11 @@ odds_2021 <- read_csv(url_odds)
 ##### Data Pre-processing #####
 
 #Fetch current date for updating visualizations
-update_date <- Sys.Date() %>%
+
+# update_date <- Sys.Date() %>%
+    # format(format="%B %d")
+
+update_date <- max(elo_historical$Date) %>% 
     format(format="%B %d")
 
 # Filter for NHL colors and logos
@@ -124,10 +129,11 @@ playoff_odds_canada <- ggplot(odds_canada, aes(x=datestamp, y = `Playoffs%`, col
     geom_line(size = 1.2) +
     labs(x = "", y = "Playoff Odds (%)",
          title = "How Canada's playoff picture has developed, 2020-21",
-         subtitle = glue("Daily playoff odds (based on Elo Ratings) for teams in the NHL's North Division. As of games prior to {update_date}."),
+         subtitle = glue("Daily playoff odds (based on Elo Ratings) for teams in the NHL's North Division. Through regular season games."),
          caption = "Data: Neil Paine (FiveThirtyEight.com)\nGraphic: @steodosescu") +
     scale_color_manual(name="", values = canada_manual_colors) +
     theme(plot.title = element_text(face="bold")) +
+    theme(plot.subtitle = element_markdown()) +
     geom_hline(yintercept = 50.0, color = "red", linetype = "dashed", alpha=0.5)
 
 
@@ -147,7 +153,7 @@ playoff_odds_table_canada <- odds_current %>%
     cols_align(align = "left",
                columns = 1) %>%
     tab_header(title = md("**2020-21 NHL North Division Playoff Odds**"),
-               subtitle = glue("Probabilities based on Elo ratings, courtesy of Neil Paine (FiveThirtyEight.com). Elo measures a team's strength over time, accounting for quality of opponents, locations of games and margin of victory. As of games prior to {update_date}.")) %>%
+               subtitle = glue("Probabilities based on Elo ratings, courtesy of Neil Paine (FiveThirtyEight.com). Elo measures a team's strength over time, accounting for quality of opponents, locations of games and margin of victory. As of games through {update_date}.")) %>%
     tab_source_note(
         source_note = md("DATA: Neil Paine (FiveThirtyEight.com)<br>TABLE: @steodosescu | Inspired by Tom Mock"))
 
@@ -170,10 +176,11 @@ playoff_odds_west <- ggplot(odds_west, aes(x=datestamp, y = `Playoffs%`, color =
     geom_line(size = 1.2) +
     labs(x = "", y = "Playoff Odds (%)",
          title = "How the West Division's playoff picture has developed, 2020-21",
-         subtitle = glue("Daily playoff odds (based on Elo Ratings) for teams in the West. As of games prior to {update_date}."),
+         subtitle = glue("Daily playoff odds (based on Elo Ratings) for teams in the West. Through regular season games."),
          caption = "Data: Neil Paine (FiveThirtyEight.com)\nGraphic: @steodosescu") +
     scale_color_manual(name="", values = west_manual_colors) +
     theme(plot.title = element_text(face="bold")) +
+    theme(plot.subtitle = element_markdown()) +
     geom_hline(yintercept = 50.0, color = "red", linetype = "dashed", alpha=0.5)
 
 # West Division teams playoff odds table
@@ -192,7 +199,7 @@ playoff_odds_table_west <- odds_current %>%
     cols_align(align = "left",
                columns = 1) %>%
     tab_header(title = md("**2020-21 NHL West Division Playoff Odds**"),
-               subtitle = glue("Probabilities based on Elo ratings, courtesy of Neil Paine (FiveThirtyEight.com). Elo measures a team's strength over time, accounting for quality of opponents, locations of games and margin of victory. As of games prior to {update_date}.")) %>%
+               subtitle = glue("Probabilities based on Elo ratings, courtesy of Neil Paine (FiveThirtyEight.com). Elo measures a team's strength over time, accounting for quality of opponents, locations of games and margin of victory. As of games through {update_date}.")) %>%
     tab_source_note(
         source_note = md("DATA: Neil Paine (FiveThirtyEight.com)<br>TABLE: @steodosescu | Inspired by Tom Mock"))
 
@@ -216,10 +223,11 @@ playoff_odds_central <- ggplot(odds_central, aes(x=datestamp, y = `Playoffs%`, c
     geom_line(size = 1.2) +
     labs(x = "", y = "Playoff Odds (%)",
          title = "How the Central Division's playoff picture has developed, 2020-21",
-         subtitle = glue("Daily playoff odds (based on Elo Ratings) for teams in the Central. As of games prior to {update_date}."),
+         subtitle = glue("Daily playoff odds (based on Elo Ratings) for teams in the Central. Through regular season games."),
          caption = "Data: Neil Paine (FiveThirtyEight.com)\nGraphic: @steodosescu") +
     scale_color_manual(name="", values = central_manual_colors) +
     theme(plot.title = element_text(face="bold")) +
+    theme(plot.subtitle = element_markdown()) +
     geom_hline(yintercept = 50.0, color = "red", linetype = "dashed", alpha=0.5)
 
 # Central Division teams playoff odds table
@@ -238,7 +246,7 @@ playoff_odds_table_central <- odds_current %>%
     cols_align(align = "left",
                columns = 1) %>%
     tab_header(title = md("**2020-21 NHL Central Division Playoff Odds**"),
-               subtitle = glue("Probabilities based on Elo ratings, courtesy of Neil Paine (FiveThirtyEight.com). Elo measures a team's strength over time, accounting for quality of opponents, locations of games and margin of victory. As of games prior to {update_date}.")) %>%
+               subtitle = glue("Probabilities based on Elo ratings, courtesy of Neil Paine (FiveThirtyEight.com). Elo measures a team's strength over time, accounting for quality of opponents, locations of games and margin of victory. As of games through {update_date}.")) %>%
     tab_source_note(
         source_note = md("DATA: Neil Paine (FiveThirtyEight.com)<br>TABLE: @steodosescu | Inspired by Tom Mock"))
 
@@ -261,10 +269,11 @@ playoff_odds_east <- ggplot(odds_east, aes(x=datestamp, y = `Playoffs%`, color =
     geom_line(size = 1.2) +
     labs(x = "", y = "Playoff Odds (%)",
          title = "How the East Division's playoff picture has developed, 2020-21",
-         subtitle = glue("Daily playoff odds (based on Elo Ratings) for teams in the East. As of games prior to {update_date}."),
+         subtitle = glue("Daily playoff odds (based on Elo Ratings) for teams in the East. As of games through Through regular season games."),
          caption = "Data: Neil Paine (FiveThirtyEight.com)\nGraphic: @steodosescu") +
     scale_color_manual(name="", values = east_manual_colors) +
     theme(plot.title = element_text(face="bold")) +
+    theme(plot.subtitle = element_markdown()) +
     geom_hline(yintercept = 50.0, color = "red", linetype = "dashed", alpha=0.5)
 
 
@@ -284,7 +293,7 @@ playoff_odds_table_east <- odds_current %>%
     cols_align(align = "left",
                columns = 1) %>%
     tab_header(title = md("**2020-21 NHL East Division Playoff Odds**"),
-               subtitle = glue("Probabilities based on Elo ratings, courtesy of Neil Paine (FiveThirtyEight.com). Elo measures a team's strength over time, accounting for quality of opponents, locations of games and margin of victory. As of games prior to {update_date}.")) %>%
+               subtitle = glue("Probabilities based on Elo ratings, courtesy of Neil Paine (FiveThirtyEight.com). Elo measures a team's strength over time, accounting for quality of opponents, locations of games and margin of victory. As of games through {update_date}.")) %>%
     tab_source_note(
         source_note = md("DATA: Neil Paine (FiveThirtyEight.com)<br>TABLE: @steodosescu | Inspired by Tom Mock"))
 
@@ -303,7 +312,7 @@ gt_tbl <- odds_current %>%
     tab_spanner(label = "Average of 1,000x simulations", 
                 columns = 5:8) %>%
     tab_header(title = md("**NHL Power Rankings**"),
-               subtitle = glue("Elo ratings courtesy of Neil Paine. Elo measures a team's strength over time, accounting for the strength of opponents, locations of games and margin of victory. As of games prior to {update_date}.")) %>%
+               subtitle = glue("Elo ratings courtesy of Neil Paine. Elo measures a team's strength over time, accounting for the strength of opponents, locations of games and margin of victory. As of games through {update_date}.")) %>%
     tab_source_note(
         source_note = md("DATA: Neil Paine (FiveThirtyEight.com)<br>TABLE: @steodosescu"))
 
@@ -425,7 +434,7 @@ ui <- tags$head(
                title = tags$div(img(src="NHL.png", height=30), "2020-21 NHL Odds"),
                tabPanel("Power Rankings", icon = icon("signal"), 
                         h1("NHL Power Rankings"),
-                        glue("Based on Neil Paine's Elo model at FiveThirtyEight.com. Data as of games prior to {update_date}."),
+                        glue("Based on Neil Paine's Elo model at FiveThirtyEight.com. Data as of games through {update_date}."),
                         reactableOutput("table")
                ),
                navbarMenu("Division Odds", icon = icon("percent"), #creates dropdown menu
@@ -442,17 +451,19 @@ ui <- tags$head(
                tabPanel("Historical Elo",icon = icon("hockey-puck"),
                         h1("Complete History of the NHL"),
                         "Every NHL franchise's relative strength after every game dating back to the league's inception. An Elo rating of ~1500 is considered average. An expansion team's initial Elo is set to be 1380, and a team's final Elo from the end of one season is reverted toward a mean of 1505 by 30 percent at the start of the following season.",
-                        "Elo ratings measure a team's strength over time, accounting for the strength of opponents, locations of games and margin of victory.",
+                        "Elo ratings measure a team's strength over time, accounting for the strength of opponents, locations of games and margin of victory. Information is collected from Neil Paine (FiveThirtyEight).",
                         br(),
                         br(),
                         sidebarPanel(
+                            helpText("Select a team to examine its Elo rating over time. 
+                            You can also hover to reveal that team's change in Elo rating from game to game on the plot to the right."),
                             selectizeInput("teamInput", "Team",
-                                                    choices = unique(elo_historical$Team.A),  
-                                                    selected="Tampa Bay Lightning", multiple =FALSE),
+                                           choices = unique(elo_historical$Team.A),  
+                                           selected="Tampa Bay Lightning", multiple =FALSE),
                             sliderInput("yearInput", "Year", min=1918, max=2021, 
                                         value=c(1950, 2021), sep=""), width = 4),
-
-                        mainPanel(plotOutput("elo_plot"), width = 8),
+                        
+                        mainPanel(plotlyOutput("elo_plot"), width = 8),
                ),
                tabPanel("About", icon = icon("info-circle"),
                         fluidRow(
@@ -469,7 +480,7 @@ ui <- tags$head(
                           p("App created by ", tags$a(href = "https://steodose.github.io/steodosescu.github.io/", 'Stephan Teodosescu', target = '_blank'), ", April 2021", HTML("&bull;"),
                             "Find the code on Github:", tags$a(href = "https://github.com/steodose/NHL-Odds", tags$i(class = 'fa fa-github', style = 'color:#5000a5'), target = '_blank'), style = "font-size: 100%"),
                           p("Questions? Comments? Reach out on Twitter", tags$a(href = "https://twitter.com/steodosescu", tags$i(class = 'fa fa-twitter', style = 'color:#1DA1F2'), target = '_blank'), style = "font-size: 100%"),
-                          p(tags$em("Last updated: April 2021"), style = 'font-size:85%'))),
+                          p(tags$em("Last updated: June 2021"), style = 'font-size:85%'))),
                windowTitle = "2020-21 NHL Odds"
     ) #navbarPage bracket
 ) #END UI function
@@ -587,19 +598,19 @@ server <- function(input, output) {
             )
     })
     
-    output$elo_plot <- renderPlot({
+    output$elo_plot <- renderPlotly({
         
-        ggplot(d(), aes(x = Date, y = Rating.A.Post, color = Team.A, group = Team.A)) +
-            geom_line(size = 1.2) +
-            labs(x = "", y = "ELO Rating",
-                 title = "Historical NHL Elo Ratings",
-                 subtitle = glue("Data as of games prior to **{update_date}** of 2020-21 season."),
-                 caption = "Data: Neil Paine (Fivethirtyeight.com)\nGraphic: @steodosescu") +
-            scale_color_manual(values = historical_manual_colors) +
-            theme(plot.title = element_text(face="bold")) +
-            theme(plot.subtitle = element_markdown()) +
-            theme(legend.position="none") +
-            geom_hline(yintercept = 1500, color = "red", linetype = "dashed", alpha=0.5)
+        ggplotly(ggplot(d(), aes(x = Date, y = Rating.A.Post, color = Team.A)) +
+                     geom_line(size = 1.2) +
+                     labs(x = "", y = "ELO Rating",
+                          title = "Historical NHL Elo Ratings",
+                          subtitle = glue("Data as of games through **{update_date}** of 2020-21 season."),
+                          caption = "Data: Neil Paine (Fivethirtyeight.com)\nGraphic: @steodosescu") +
+                     scale_color_manual(values = historical_manual_colors) +
+                     theme(plot.title = element_text(face="bold")) +
+                     theme(plot.subtitle = element_markdown()) +
+                     theme(legend.position="none") +
+                     geom_hline(yintercept = 1500, color = "red", linetype = "dashed", alpha=0.5))
     })
 } #END Server function
 
