@@ -3,6 +3,8 @@
 
 library(shiny)
 library(shinythemes)
+library(shinycssloaders)
+library(shinyscreenshot)
 
 library(tidyverse)
 library(teamcolors)
@@ -37,9 +39,6 @@ odds_2021 <- read_csv(url_odds)
 ##### Data Pre-processing #####
 
 #Fetch current date for updating visualizations
-
-# update_date <- Sys.Date() %>%
-    # format(format="%B %d")
 
 update_date <- max(elo_historical$Date) %>% 
     format(format="%B %d")
@@ -435,7 +434,8 @@ ui <- tags$head(
                tabPanel("Power Rankings", icon = icon("signal"), 
                         h1("NHL Power Rankings"),
                         glue("Based on Neil Paine's Elo model at FiveThirtyEight.com. Data as of games through {update_date}."),
-                        reactableOutput("table")
+                        reactableOutput("table"),
+                        actionButton("go", "Take a screenshot")
                ),
                navbarMenu("Division Odds", icon = icon("percent"), #creates dropdown menu
                           tabPanel("Current Chances",
@@ -463,7 +463,7 @@ ui <- tags$head(
                             sliderInput("yearInput", "Year", min=1918, max=2021, 
                                         value=c(1950, 2021), sep=""), width = 4),
                         
-                        mainPanel(plotlyOutput("elo_plot"), width = 8),
+                        mainPanel(withSpinner(plotlyOutput("elo_plot")), width = 8),
                ),
                tabPanel("About", icon = icon("info-circle"),
                         fluidRow(
@@ -477,7 +477,7 @@ ui <- tags$head(
                hr(style = "border-color: #cbcbcb;"),
                fluidRow(
                    column(9,
-                          p("App created by ", tags$a(href = "https://steodose.github.io/steodosescu.github.io/", 'Stephan Teodosescu', target = '_blank'), ", April 2021", HTML("&bull;"),
+                          p("App created by ", tags$a(href = "https://steodose.github.io/steodosescu.github.io/", 'Stephan Teodosescu', target = '_blank'),", April 2021", HTML("&bull;"),
                             "Find the code on Github:", tags$a(href = "https://github.com/steodose/NHL-Odds", tags$i(class = 'fa fa-github', style = 'color:#5000a5'), target = '_blank'), style = "font-size: 100%"),
                           p("Questions? Comments? Reach out on Twitter", tags$a(href = "https://twitter.com/steodosescu", tags$i(class = 'fa fa-twitter', style = 'color:#1DA1F2'), target = '_blank'), style = "font-size: 100%"),
                           p(tags$em("Last updated: June 2021"), style = 'font-size:85%'))),
@@ -539,6 +539,9 @@ server <- function(input, output) {
                   fullWidth = FALSE, 
                   defaultColDef = colDef(align = "center", minWidth = 100)
         )
+    })
+    observeEvent(input$go, { #take screenshot using Dean Attali's shinyscreenshot
+        screenshot()
     })
     
     output$plot_table_north <-
