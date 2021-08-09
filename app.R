@@ -435,7 +435,7 @@ ui <- tags$head(
                         h1("NHL Power Rankings"),
                         glue("Based on Neil Paine's Elo model at FiveThirtyEight.com. Data as of games through {update_date}."),
                         reactableOutput("table"),
-                        actionButton("go", "Take a screenshot")
+                        screenshotButton()
                ),
                navbarMenu("Division Odds", icon = icon("percent"), #creates dropdown menu
                           tabPanel("Current Chances",
@@ -455,11 +455,11 @@ ui <- tags$head(
                         br(),
                         br(),
                         sidebarPanel(
-                            helpText("Select a team to examine its Elo rating over time. 
+                            helpText("Select a team (or multiple) to examine Elo ratings over time. 
                             You can also hover to reveal that team's change in Elo rating from game to game on the plot to the right."),
                             selectizeInput("teamInput", "Team",
                                            choices = unique(elo_historical$Team.A),  
-                                           selected="Tampa Bay Lightning", multiple =FALSE),
+                                           selected="Tampa Bay Lightning", multiple = TRUE),
                             sliderInput("yearInput", "Year", min=1918, max=2021, 
                                         value=c(1950, 2021), sep=""), width = 4),
                         
@@ -540,10 +540,7 @@ server <- function(input, output) {
                   defaultColDef = colDef(align = "center", minWidth = 100)
         )
     })
-    observeEvent(input$go, { #take screenshot using Dean Attali's shinyscreenshot
-        screenshot()
-    })
-    
+
     output$plot_table_north <-
         render_gt(
             expr = playoff_odds_table_canada,
