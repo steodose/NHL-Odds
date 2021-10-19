@@ -24,15 +24,15 @@ library(plotly)
 ##### Load datasets #####
 
 #Load Neil Paine's (538) historical NHL Elo ratings from his Github
-url_historical <- getURL("https://raw.githubusercontent.com/NeilPaine538/NHL-Player-And-Team-Ratings/master/nhl_elo_historical.csv")
+url_historical <- getURL("https://raw.githubusercontent.com/NeilPaine538/NHL-Player-And-Team-Ratings/master/Old%20NHL%20Elo%20data/nhl_elo_historical.csv")
 elo_historical <- read_csv(url_historical)
 
 #Load Neil Paine's (538) current NHL Elo ratings and playoff odds from his Github
-url <- getURL("https://raw.githubusercontent.com/NeilPaine538/NHL-Player-And-Team-Ratings/master/NHL-odds-current.csv")
+url <- getURL("https://raw.githubusercontent.com/NeilPaine538/NHL-Player-And-Team-Ratings/master/Old%20NHL%20Elo%20data/NHL-odds-current.csv")
 odds_current <- read_csv(url)
 
 #Load Neil Paine's historical odds for this season
-url_odds <- getURL("https://raw.githubusercontent.com/NeilPaine538/NHL-Player-And-Team-Ratings/master/NHL-odds-history.csv")
+url_odds <- getURL("https://raw.githubusercontent.com/NeilPaine538/NHL-Player-And-Team-Ratings/master/Old%20NHL%20Elo%20data/NHL-odds-history.csv")
 odds_2021 <- read_csv(url_odds)
 
 
