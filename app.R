@@ -20,6 +20,7 @@ library(reactable)
 library(reactablefmtr)
 library(htmltools)
 library(plotly)
+library(prismatic)
 
 ##### Load datasets #####
 
@@ -34,6 +35,14 @@ odds_current <- read_csv(url)
 #Load Neil Paine's historical odds for this season
 url_odds <- getURL("https://raw.githubusercontent.com/NeilPaine538/NHL-Player-And-Team-Ratings/master/Old%20NHL%20Elo%20data/NHL-odds-history.csv")
 odds_2021 <- read_csv(url_odds)
+
+#Install the development version of hockeyR (requires R 3.5) from GitHub with:
+# install.packages("devtools")
+devtools::install_github("danmorse314/hockeyR") #NHL
+
+# Load Vegas win totals (from BetMGM as of Sept. 26) https://www.vegasinsider.com/nhl/odds/point-totals/
+vegas_totals <- 'https://raw.githubusercontent.com/steodose/BlogPosts/master/NHL%202022/vegas%20win%20totals.csv' %>% 
+    read_csv()
 
 
 ##### Data Pre-processing #####
@@ -107,6 +116,17 @@ gt_theme_538 <- function(data,...) {
             ...
         ) 
 }
+
+
+# Custom ggplot theme (inspired by Owen Phillips at the F5 substack blog)
+theme_custom <- function () { 
+    theme_minimal(base_size=11, base_family="Chivo") %+replace% 
+        theme(
+            panel.grid.minor = element_blank(),
+            plot.background = element_rect(fill = 'floralwhite', color = "floralwhite")
+        )
+}
+
 
 ##### Create Playoff Probabilities line graphs and tables #####
 
@@ -349,6 +369,74 @@ odds_current <- odds_current %>%
 #Define color palette to use in table
 my_color_pal <- c("#ffffff", "#f2fbd2", "#c9ecb4", "#93d3ab", "#35b0ab")
 
+
+#1. Create current NHL standings table (using hockeyR package)
+records <- hockeyR::get_team_records()
+
+# Load NHL colors and logos
+nhl_logos_colors <- hockeyR::team_logos_colors
+
+# Join standings and logos dataset
+df_nhl <- records %>% 
+    left_join(nhl_logos_colors, by = c("team_name" = "full_team_name")) %>% 
+    mutate(games = w+l+otl,
+           st_points_perc = st_points/(games*2)) %>% 
+    select(team_logo_espn,team_name,conference, division, games, overall,st_points,st_points_perc) %>% 
+    arrange(desc(st_points))
+
+
+#2. Points Percentage Plot
+
+# Define an aspect ratio to use throughout. This value is the golden ratio which provides a wider than tall rectangle
+asp_ratio <- 1.618 
+
+pts_perc_df <- records %>% 
+    left_join(vegas_totals, by = c("team_name" = "Team")) %>% 
+    select(team_name, team_abbr, st_points, `Win Total`, everything()) %>% 
+    mutate(games = w+l+otl,
+           st_points_perc = st_points/(games*2),
+           vegas_points_perc = `Win Total`/(82*2),
+           points_delta =  st_points_perc - vegas_points_perc) %>% 
+    select(team_name, team_abbr, st_points, `Win Total`, games, st_points_perc, vegas_points_perc, points_delta, everything())
+
+# Join in team colors and logos
+pts_perc_df <- pts_perc_df %>% 
+    left_join(nhl_logos_colors, by = c("team_name" = "full_team_name"))
+
+# Visualize in bar graph with logos as points. Inspired by this tutorial Thomas Mock put together on plotting images as points in ggplot2.
+pts_perc_plot <- pts_perc_df %>% 
+    ggplot(aes(x = fct_reorder(team_name, -points_delta), y = points_delta)) +
+    geom_col(
+        aes(
+            fill = team_color1, 
+            color = after_scale(clr_darken(fill, 0.3))
+        ),
+        width = 0.4, 
+        alpha = .75,
+    ) + 
+    scale_color_identity(aesthetics =  c("fill"))  +
+    geom_image(
+        aes(
+            image = team_logo_espn                                  
+        ), 
+        size = 0.035, 
+        by = "width", 
+        asp = asp_ratio
+    ) +
+    geom_hline(yintercept = 0, color = "black", size = 1) +
+    scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
+    theme_custom() + 
+    theme(axis.text.x = element_blank(), 
+          panel.grid.major.x = element_blank(),
+          plot.title = element_text(face = 'bold', size = 16), 
+          plot.title.position = 'plot') + 
+    labs(x = "", 
+         y = "Points Percentage Difference (%)", 
+         title = "Performance Relative to Expectations", 
+         subtitle = paste0("Difference between current points percentage and expected points percentage, according to bookmakers. As of ", format.Date(Sys.Date(), "%b. %d, %Y")), 
+         caption = "Source: hockeyR/NHL.com/BetMGM\nPlot: @steodosescu")
+
+
 #####  Historical NHL Elo Ratings Reactive Plot #####
 
 # Initialize the color scheme
@@ -429,20 +517,17 @@ historical_manual_colors <- c("Toronto Maple Leafs" = "#00205B",
 ui <- tags$head(
     tags$link(rel = "icon", type = "image/png", sizes = "32x32", href = "/NHL.png"), #Getting the NHL logo in the browser window
     
-    navbarPage(theme = shinytheme("spacelab"), #blue navbar theme at the top
-               title = tags$div(img(src="NHL.png", height=30), "2020-21 NHL Odds"),
-               tabPanel("Power Rankings", icon = icon("signal"), 
-                        h1("NHL Power Rankings"),
-                        glue("Based on Neil Paine's Elo model at FiveThirtyEight.com. Data as of games through {update_date}."),
+    navbarPage(theme = shinytheme("spacelab"), #navbar theme at the top
+               title = tags$div(img(src="NHL.png", height=30), "2021-22 NHL"),
+               tabPanel("Standings", icon = icon("signal"), 
+                        h1("Current NHL Standings"),
+                        glue("Results accessed using the hockeyR package. Data as of ", format.Date(Sys.Date(), "%b. %d, %Y.")),
                         reactableOutput("table"),
                         screenshotButton()
                ),
-               navbarMenu("Division Odds", icon = icon("percent"), #creates dropdown menu
-                          tabPanel("Current Chances",
-                                   gt_output("plot_table_north"),
-                                   gt_output("plot_table_west"),
-                                   gt_output("plot_table_central"),
-                                   gt_output("plot_table_east")),
+               navbarMenu("Statistics", icon = icon("percent"), #creates dropdown menu
+                          tabPanel("Team Stats",
+                                   plotOutput("plot_points_perc", width = "50%")),
                           tabPanel("Season Trends",
                                    plotOutput("plot_north", width = "80%"),
                                    plotOutput("plot_west", width = "80%"),
@@ -481,7 +566,7 @@ ui <- tags$head(
                             "Find the code on Github:", tags$a(href = "https://github.com/steodose/NHL-Odds", tags$i(class = 'fa fa-github', style = 'color:#5000a5'), target = '_blank'), style = "font-size: 100%"),
                           p("Questions? Comments? Reach out on Twitter", tags$a(href = "https://twitter.com/steodosescu", tags$i(class = 'fa fa-twitter', style = 'color:#1DA1F2'), target = '_blank'), style = "font-size: 100%"),
                           p(tags$em("Last updated: June 2021"), style = 'font-size:85%'))),
-               windowTitle = "2020-21 NHL Odds"
+               windowTitle = "2021-22 NHL"
     ) #navbarPage bracket
 ) #END UI function
 
@@ -490,47 +575,40 @@ ui <- tags$head(
 server <- function(input, output) {
     
     output$table <- renderReactable({
-        reactable(odds_current,
+        reactable(df_nhl,
                   theme = theme_538,
-                  ### add column group header
-                  columnGroups = list(
-                      colGroup(name = "Chances based on average of 1,000x simulations", 
-                               columns = c("Win Div.%","Playoffs%","Make 2nd Rd",
-                                           "Make 3rd Rd","Make Finals","Win Finals"))
-                  ),
                   showSortIcon = TRUE,
                   searchable = TRUE,
                   language = reactableLang(
                       searchPlaceholder = "SEARCH FOR A TEAM..."),
                   defaultPageSize = 100,
                   columns = list(
-                      `Team Name` = colDef(minWidth = 140,
-                                           name = "Team Name",
+                      team_name = colDef(minWidth = 180,
+                                           name = "Team",
                                            align = "left"),
-                      Division = colDef(align = "left"),
-                      `Elo Rating` = colDef(maxWidth = 90,
-                                            name = "Elo Rating",
-                                            style = color_scales(odds_current, colors = my_color_pal),
+                      division = colDef(align = "left",
+                                        name = "Division"),
+                      conference = colDef(align = "left",
+                                        name = "Conference"),
+                      games = colDef(maxWidth = 90,
+                                            name = "GP",
+                                     style = list(borderLeft = "2px solid #555"),
                                             align = "right"),
-                      `Win Div.%` = colDef(align = "right",
-                                           style = list(borderLeft = "2px solid #555"),
-                                           format =  colFormat(digits = 1)),
-                      `Playoffs%` = colDef(align = "right",
-                                           format =  colFormat(digits = 1)),
-                      `Make 2nd Rd` = colDef(align = "right",
-                                             format =  colFormat(digits = 1)),
-                      `Make 3rd Rd` = colDef(align = "right",
-                                             format =  colFormat(digits = 1)),
-                      `Make Finals` = colDef(align = "right",
-                                             format =  colFormat(digits = 1)),
-                      `Win Finals` = colDef(align = "right",
-                                            format =  colFormat(digits = 1)),
+                      overall = colDef(align = "right",
+                                       name = "Overall Record"),
+                      st_points = colDef(align = "right",
+                                      name = "Points",
+                                      style = color_scales(df_nhl),
+                                           format =  colFormat(digits = 0)),
+                      st_points_perc= colDef(align = "right",
+                                      name = "Points Percentage",
+                                      format =  colFormat(digits = 3)),
                       ### add logos using embed_img()
-                      logo = colDef(
+                      team_logo_espn = colDef(
                           name = "",
                           maxWidth = 70,
                           align = "center",
-                          cell = embed_img(height = "25", width = "40")
+                          cell = embed_img(height = "30", width = "30")
                       )),
                   pagination = FALSE,
                   compact = TRUE, 
@@ -541,33 +619,10 @@ server <- function(input, output) {
         )
     })
 
-    output$plot_table_north <-
-        render_gt(
-            expr = playoff_odds_table_canada,
-            height = px(700),
-            width = px(900)
-        )
+    output$plot_points_perc <- renderPlot({
+        plot(pts_perc_plot)
+    })
     
-    output$plot_table_west <-
-        render_gt(
-            expr = playoff_odds_table_west,
-            height = px(700),
-            width = px(900)
-        )
-    
-    output$plot_table_central <-
-        render_gt(
-            expr = playoff_odds_table_central,
-            height = px(700),
-            width = px(900)
-        )
-    
-    output$plot_table_east <-
-        render_gt(
-            expr = playoff_odds_table_east,
-            height = px(700),
-            width = px(900)
-        )
     
     output$plot_north <- renderPlot({
         plot(playoff_odds_canada)
